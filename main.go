@@ -28,7 +28,7 @@ func main() {
 }
 
 func runme() {
-	ctx := context.Background()
+	ctx, cncl := context.WithCancel(context.Background())
 	rConfig := wazero.NewRuntimeConfig().
 		WithMemoryLimitPages(32768).
 		WithCloseOnContextDone(true)
@@ -40,6 +40,11 @@ func runme() {
 		log.Panicf("failed to instantiate module: %v", err)
 	}
 	fmt.Println(mod)
+	cncl()
+	// Note, pretty sure this will always return immediately if cancel has
+	// returned since the cancellation sets the done flag inside the context
+	// before returning.
+	<-ctx.Done()
 	err = apiCloser.Close(ctx)
 	if err != nil {
 		log.Panicf("failed to close module: %v", err)
